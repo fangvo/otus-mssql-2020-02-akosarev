@@ -1,4 +1,4 @@
---1. Все товары, в которых в название есть пометка urgent или название начинается с Animal
+﻿--1. Все товары, в которых в название есть пометка urgent или название начинается с Animal
 SELECT
   StockItemID,
   StockItemName
@@ -23,42 +23,42 @@ WHERE
 --Соритровка должна быть по номеру квартала, трети года, дате продажи.
 
 SELECT
-  DISTINCT Sales.Invoices.InvoiceID,
-  InvoiceDate,
-  DATENAME(m, InvoiceDate) AS [Month],
-  DATEPART(q, InvoiceDate) AS Quater,CASE
-    WHEN DATEPART(m, InvoiceDate) BETWEEN 1
+  DISTINCT Orders.OrderId,
+  OrderDate,
+  DATENAME(m, OrderDate) AS [Month],
+  DATEPART(q, OrderDate) AS Quater,CASE
+    WHEN DATEPART(m, OrderDate) BETWEEN 1
     AND 4 THEN 1
-    WHEN DATEPART(m, InvoiceDate) BETWEEN 5
+    WHEN DATEPART(m, OrderDate) BETWEEN 5
     AND 8 THEN 2
     ELSE 3
   END AS ThirdOfYear
-FROM Sales.Invoices
-JOIN Sales.InvoiceLines ON Invoices.InvoiceID = InvoiceLines.InvoiceID
+FROM Sales.Orders
+JOIN Sales.OrderLines ON Orders.OrderID = OrderLines.OrderID
 WHERE
   UnitPrice > 100
   OR Quantity > 20;
 
 SELECT
-  DISTINCT Sales.Invoices.InvoiceID,
-  InvoiceDate,
-  DATENAME(m, InvoiceDate) AS [Month],
-  DATEPART(q, InvoiceDate) AS Quater,CASE
-    WHEN DATEPART(m, InvoiceDate) BETWEEN 1
+  DISTINCT Orders.OrderId,
+  OrderDate,
+  DATENAME(m, OrderDate) AS [Month],
+  DATEPART(q, OrderDate) AS Quater,CASE
+    WHEN DATEPART(m, OrderDate) BETWEEN 1
     AND 4 THEN 1
-    WHEN DATEPART(m, InvoiceDate) BETWEEN 5
+    WHEN DATEPART(m, OrderDate) BETWEEN 5
     AND 8 THEN 2
     ELSE 3
   END AS ThirdOfYear
-FROM Sales.Invoices
-JOIN Sales.InvoiceLines ON Invoices.InvoiceID = InvoiceLines.InvoiceID
+FROM Sales.Orders
+JOIN Sales.OrderLines ON Orders.OrderID = OrderLines.OrderID
 WHERE
   UnitPrice > 100
   OR Quantity > 20
 ORDER BY
   Quater,
   ThirdOfYear,
-  InvoiceDate OFFSET 1000 ROWS FETCH NEXT 100 ROWS ONLY;
+  OrderDate OFFSET 1000 ROWS FETCH NEXT 100 ROWS ONLY;
 
 --4. Заказы поставщикам, которые были исполнены за 2014й год с доставкой Road Freight или Post, добавьте название поставщика, имя контактного лица принимавшего заказ
 
@@ -77,24 +77,24 @@ WHERE
 --5. 10 последних по дате продаж с именем клиента и именем сотрудника, который оформил заказ.
 
 SELECT
-  TOP 10 InvoiceID,
+  TOP 10 OrderID,
   CustomerName,
   FullName
-FROM Sales.Invoices
-JOIN Sales.Customers ON Invoices.CustomerID = Customers.CustomerID
-JOIN Application.People ON Invoices.SalespersonPersonID = People.PersonID
+FROM Sales.Orders
+JOIN Sales.Customers ON Orders.CustomerID = Customers.CustomerID
+JOIN Application.People ON Orders.SalespersonPersonID = People.PersonID
 ORDER BY
-  InvoiceDate DESC;
+  OrderDate DESC;
 
 --6. Все ид и имена клиентов и их контактные телефоны, которые покупали товар Chocolate frogs 250g
 
 SELECT
-  DISTINCT PersonID,
-  FullName,
+  DISTINCT Customers.CustomerID,
+  CustomerName,
   PhoneNumber
-FROM Sales.InvoiceLines
-JOIN Sales.Invoices ON InvoiceLines.InvoiceID = Invoices.InvoiceID
-JOIN Application.People ON Invoices.ContactPersonID = People.PersonID
+FROM Sales.OrderLines
+JOIN Sales.Orders ON OrderLines.OrderID = Orders.OrderID
+JOIN Sales.Customers ON Orders.CustomerID = Customers.CustomerID
 WHERE
   StockItemID = (
     SELECT
