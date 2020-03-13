@@ -51,6 +51,7 @@ JOIN cte
 SELECT TOP (5)
 	Customers.CustomerID
  ,CustomerName
+ ,TransactionAmount
 FROM Sales.CustomerTransactions
 JOIN Sales.Customers
 	ON CustomerTransactions.CustomerID = Customers.CustomerID
@@ -59,21 +60,27 @@ ORDER BY TransactionAmount DESC;
 SELECT
 	Customers.CustomerID
  ,CustomerName
+ ,TransactionAmount
 FROM Sales.Customers
-WHERE CustomerID IN (SELECT TOP (5)
+JOIN (SELECT TOP (5)
 		CustomerID
+	 ,TransactionAmount
 	FROM Sales.CustomerTransactions
-	ORDER BY TransactionAmount DESC);
+	ORDER BY TransactionAmount DESC) AS [Transaction]
+	ON Customers.CustomerID = [Transaction].CustomerID;
+
 
 WITH cte
 AS
 (SELECT TOP (5)
 		CustomerID
+	 ,TransactionAmount
 	FROM Sales.CustomerTransactions
 	ORDER BY TransactionAmount DESC)
 SELECT DISTINCT
 	Customers.CustomerID
  ,CustomerName
+ ,TransactionAmount
 FROM Sales.Customers
 JOIN cte
 	ON Customers.CustomerID = cte.CustomerID
@@ -91,28 +98,20 @@ JOIN Application.Cities
 	ON Customers.DeliveryCityID = Cities.CityID
 JOIN Application.People
 	ON Invoices.PackedByPersonID = People.PersonID
+JOIN Sales.InvoiceLines
+	ON Invoices.InvoiceID = InvoiceLines.InvoiceID
 WHERE ConfirmedReceivedBy IS NOT NULL
-AND InvoiceID IN (SELECT
-		InvoiceID
-	FROM Sales.InvoiceLines
-	WHERE StockItemID IN (SELECT TOP 3
-			StockItemID
-		FROM Warehouse.StockItems
-		ORDER BY UnitPrice DESC))
+AND StockItemID IN (SELECT TOP 3
+		StockItemID
+	FROM Warehouse.StockItems
+	ORDER BY UnitPrice DESC)
 
 WITH cte
 AS
 (SELECT TOP 3
 		StockItemID
 	FROM Warehouse.StockItems
-	ORDER BY UnitPrice DESC),
-cte2
-AS
-(SELECT
-		InvoiceID
-	FROM Sales.InvoiceLines
-	JOIN cte
-		ON InvoiceLines.StockItemID = cte.StockItemID)
+	ORDER BY UnitPrice DESC)
 SELECT DISTINCT
 	CityID
  ,CityName
@@ -124,8 +123,10 @@ JOIN Application.Cities
 	ON Customers.DeliveryCityID = Cities.CityID
 JOIN Application.People
 	ON Invoices.PackedByPersonID = People.PersonID
-JOIN cte2
-	ON Invoices.InvoiceID = cte2.InvoiceID
+JOIN Sales.InvoiceLines
+	ON Invoices.InvoiceID = InvoiceLines.InvoiceID
+JOIN cte
+	ON InvoiceLines.StockItemID = cte.StockItemID
 WHERE ConfirmedReceivedBy IS NOT NULL;
 
 --5. Объясните, что делает и оптимизируйте запрос:
@@ -157,10 +158,11 @@ JOIN (SELECT
 	ON Invoices.InvoiceID = SalesTotals.InvoiceID
 ORDER BY TotalSumm DESC*/
 
-	SELECT
+SELECT
 	Invoices.InvoiceID
  ,Invoices.InvoiceDate
- ,People.FullName
+ ,People.FullName AS SalesPersonName
+	--сделан джойн заместо подзапроса
  ,SalesTotals.TotalSumm AS TotalSummByInvoice
  ,(SELECT
 			SUM(OrderLines.PickedQuantity * OrderLines.UnitPrice) AS ItemsSum
@@ -168,6 +170,7 @@ ORDER BY TotalSumm DESC*/
 		JOIN Sales.Orders
 			ON OrderLines.OrderID = Orders.OrderID
 		WHERE Orders.PickingCompletedWhen IS NOT NULL)
+	---сделан джойн заместо подзапроса
 	AS TotalSummForPickedItems
 FROM Sales.Invoices
 JOIN Application.People
