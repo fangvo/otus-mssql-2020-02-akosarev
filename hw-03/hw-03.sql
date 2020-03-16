@@ -1,4 +1,4 @@
---1. Выберите сотрудников, которые являются продажниками, и еще не сделали ни одной продажи.
+﻿--1. Выберите сотрудников, которые являются продажниками, и еще не сделали ни одной продажи.
 
 SELECT
 	PersonID
@@ -158,6 +158,15 @@ JOIN (SELECT
 	ON Invoices.InvoiceID = SalesTotals.InvoiceID
 ORDER BY TotalSumm DESC*/
 
+--добавлен cte
+WITH SalesTotals
+AS
+(SELECT
+		InvoiceId
+	 ,SUM(Quantity * UnitPrice) AS TotalSumm
+	FROM Sales.InvoiceLines
+	GROUP BY InvoiceId
+	HAVING SUM(Quantity * UnitPrice) > 27000)
 SELECT
 	Invoices.InvoiceID
  ,Invoices.InvoiceDate
@@ -175,12 +184,7 @@ SELECT
 FROM Sales.Invoices
 JOIN Application.People
 	ON Invoices.SalespersonPersonID = People.PersonID
-JOIN (SELECT
-		InvoiceId
-	 ,SUM(Quantity * UnitPrice) AS TotalSumm
-	FROM Sales.InvoiceLines
-	GROUP BY InvoiceId
-	HAVING SUM(Quantity * UnitPrice) > 27000) AS SalesTotals
+JOIN SalesTotals
 	ON Invoices.InvoiceID = SalesTotals.InvoiceID
 ORDER BY TotalSumm DESC;
 
