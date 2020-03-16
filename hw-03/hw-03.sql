@@ -168,12 +168,13 @@ AS
 	GROUP BY InvoiceId
 	HAVING SUM(Quantity * UnitPrice) > 27000)
 SELECT
-	Invoices.InvoiceID
+  Invoices.InvoiceID
  ,Invoices.InvoiceDate
  ,People.FullName AS SalesPersonName
 	--сделан джойн заместо подзапроса
  ,SalesTotals.TotalSumm AS TotalSummByInvoice
  ,(SELECT
+ --выносить в cte смысла нет запрос начинает работать медленей
 			SUM(OrderLines.PickedQuantity * OrderLines.UnitPrice) AS ItemsSum
 		FROM Sales.OrderLines
 		JOIN Sales.Orders
